@@ -46,7 +46,7 @@ def ground_rules(grounder, max_clauses, max_vars, clauses):
 
 def pprint(program):
     for clause in program:
-        print(Clause.to_code(clause))
+        print(Clause.to_code(Clause.to_ordered(clause)))
 
 def decide_outcome(conf_matrix):
     tp, fn, tn, fp = conf_matrix
