@@ -16,7 +16,7 @@ CLINGO_ARGS=''
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Popper, an ILP engine based on learning from failures')
-    parser.add_argument('kbpath', help = 'Path to the knowledge base one wants to learn on')
+    parser.add_argument('kbpath', help = 'Path to the knowledge base one wants to learn on', nargs='+')
     parser.add_argument('--eval-timeout', type=float, default=EVAL_TIMEOUT, help='Prolog evaluation timeout in seconds')
     parser.add_argument('--timeout', type=float, default=TIMEOUT, help='Overall timeout (in seconds)')
     parser.add_argument('--max-literals', type=int, default=MAX_LITERALS, help='Maximum number of literals allowed in program')
@@ -94,12 +94,18 @@ class Settings:
             self.debug = args.debug
             self.info = args.info
             self.stats = args.stats
-            self.kbpath = args.kbpath
-            if self.kbpath[-1] != '/':
-                self.kbpath += '/'
-            self.bias_file = self.kbpath + 'bias.pl'
-            self.ex_file = self.kbpath + 'exs.pl'
-            self.bk_file = self.kbpath + 'bk.pl'
+            if len(args.kbpath) == 1:
+                self.kbpath = args.kbpath[0]
+                if self.kbpath[-1] != '/':
+                    self.kbpath += '/'
+                self.bias_file = self.kbpath + 'bias.pl'
+                self.ex_file = self.kbpath + 'exs.pl'
+                self.bk_file = self.kbpath + 'bk.pl'
+            elif len(args.kbpath) == 3:
+                self.bias_file, self.ex_file, self.bk_file = args.kbpath
+            else:
+                raise Exception("argument KBPATH must either be a directory or you must supply a bias file, an examples file and a background knowledge file.")
+
             self.eval_timeout = args.eval_timeout
             self.test_all = args.test_all
             self.timeout = args.timeout
