@@ -144,57 +144,36 @@ class Constrain:
         literals.append(body_size_literal(clause_variable, len(body)))
         yield (None, tuple(literals))
 
-    # Jk: AC, I cleaned this up a bit, but this reorg is for you. Godspeed!
-    # AC: @JK, I made another pass through it. It was tough. I will try again once we have the whole codebase tidied.
     def redundancy_constraint(self, program, before, min_clause):
-        lits_num_clauses = defaultdict(int)
-        lits_num_recursive_clauses = defaultdict(int)
+        prog_handle = "prog"
         for clause in program:
-            (head, _) = clause
-            lits_num_clauses[head.predicate] += 1
-            if Clause.is_recursive(clause):
-                lits_num_recursive_clauses[head.predicate] += 1
+            clause_handle = self.make_clause_handle(clause)
+            prog_handle += '_' + clause_handle
+        clause_variable = vo_clause('')
 
-        recursively_called = set()
-        while True:
-            something_added = False
-            for clause in program:
-                (head, body) = clause
-                is_rec = Clause.is_recursive(clause)
-                for body_literal in body:
-                    if body_literal.predicate not in lits_num_clauses:
-                        continue
-                    if (body_literal.predicate != head.predicate and is_rec) or (head.predicate in recursively_called):
-                        something_added |= not body_literal.predicate in recursively_called
-                        recursively_called.add(body_literal.predicate)
-            if not something_added:
-                break
+        # rules encoding which clauses specialises any clause of the program
+        for clause in program:
+            clause_handle = self.make_clause_handle(clause)
+            yield from self.make_clause_inclusion_rule(clause, min_clause[clause], clause_handle)
+            yield (Literal('specialises', (clause_variable, prog_handle)),
+                   (Literal('included_clause', (clause_handle, clause_variable)),))
 
-        for lit in lits_num_clauses.keys() - recursively_called:
-            literals = []
+        # rules exhaustively checking for all cases where a clause is not redundant
+        clause_var1 = vo_clause('1')
+        clause_var2 = vo_clause('2')
+        yield (Literal('not_redundant', (clause_variable, prog_handle)),
+               (Literal('specialises', (clause_variable, prog_handle), positive = False),))
+        yield (Literal('not_redundant', (clause_var1, prog_handle)),
+               (Literal('specialises', (clause_var1, prog_handle)),
+                Literal('depends_on', (clause_var1, clause_var2)),
+                Literal('specialises', (clause_var2, prog_handle), positive = False)))
+        yield (Literal('not_redundant', (clause_var1, prog_handle)),
+               (Literal('specialises', (clause_var1, prog_handle)),
+                Literal('depends_on', (clause_var2, clause_var1)),
+                Literal('specialises', (clause_var2, prog_handle), positive = False)))
 
-            for clause_number, clause in enumerate(program):
-                clause_handle = self.make_clause_handle(clause)
-                yield from self.make_clause_inclusion_rule(clause, min_clause[clause], clause_handle)
-                clause_variable = vo_clause(clause_number)
-                literals.append(Literal('included_clause', (clause_handle, clause_variable)))
-
-            for clause_number1, clause_numbers in before.items():
-                for clause_number2 in clause_numbers:
-                    literals.append(lt(vo_clause(clause_number1), vo_clause(clause_number2)))
-
-            # ensure that each clause_var is ground to a unique value
-            literals.append(alldiff(tuple(vo_clause(c) for c in range(len(program)))))
-
-            for other_lit, num_clauses in lits_num_clauses.items():
-                if other_lit == lit:
-                    continue
-                literals.append(Literal('num_clauses', (other_lit, num_clauses)))
-            num_recursive = lits_num_recursive_clauses[lit]
-
-            literals.append(Literal('num_recursive', (lit, num_recursive)))
-
-            yield (None, tuple(literals))
+        # a rule is redundant iff it is not not redundant - if there is a redundant rule, we prune
+        yield (None, (Literal('not_redundant', (clause_variable, prog_handle), positive = False),))
 
     @staticmethod
     def format_constraint(con):

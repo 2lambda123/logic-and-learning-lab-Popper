@@ -735,3 +735,7 @@ only_once(P,A):-
 %%     not multiclause(P,A),
 %%     only_once(P,A).
 
+%%% depends on relation - necessary for redundancy constraints and higher-order programs
+% NB: following assumes that the body literal can always be unified with the head literal - an assumption that holds for now...
+depends_on(C1,C2) :- head_literal(C2,Pred,Arity,_),body_literal(C1,Pred,Arity,_).
+depends_on(C1,C3) :- depends_on(C1,C2),depends_on(C2,C3).
