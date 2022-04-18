@@ -167,16 +167,16 @@ class Stats:
         
         self.stages.append(Stage(size, self.total_programs, programs_tried, total_exec_time, exec_time))
 
-        self.logger.debug(f'Programs tried: {programs_tried} Exec Time: {exec_time:0.3f}s Total Exec Time: {total_exec_time:0.3f}s\n')
+        self.logger.debug(f'% Programs tried: {programs_tried} Exec Time: {exec_time:0.3f}s Total Exec Time: {total_exec_time:0.3f}s\n')
 
-        self.logger.debug(f'{"*" * 20} MAX LITERALS: {size} {"*" * 20}')
+        self.logger.debug(f'{"%" * 20} MAX LITERALS: {size} {"%" * 20}')
 
         self.num_literals = size
     
     def register_program(self, program, conf_matrix):
         self.total_programs +=1
         
-        self.logger.debug(f'Program {self.total_programs}:')
+        self.logger.debug(f'% Program {self.total_programs}:')
         self.logger.debug(format_program(program))
         self.logger.debug(format_conf_matrix(conf_matrix))
     
@@ -194,7 +194,7 @@ class Stats:
         elif self.best_programs:
             prog_stats = self.best_programs[-1]
         else:
-            self.logger.info('NO PROGRAMS FOUND')
+            self.logger.info('% NO PROGRAMS FOUND')
             return
 
         self.logger.info(f'\n% BEST PROG {self.total_programs}:')
@@ -210,11 +210,11 @@ class Stats:
         self.solution = prog_stats
 
     def register_completion(self):
-        self.logger.info('NO MORE SOLUTIONS')
+        self.logger.info('% NO MORE SOLUTIONS')
         self.final_exec_time = self.total_exec_time()
 
     def register_rules(self, rules):
-        self.logger.debug('Rules:')
+        self.logger.debug('% Rules:')
         for rule in rules:
             self.logger.debug(Constrain.format_constraint(rule))
         self.logger.debug('\n')

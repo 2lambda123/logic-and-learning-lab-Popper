@@ -12,7 +12,6 @@ def generate_program(model):
     clause_id_to_head = {}
 
     for atom in model:
-
         if atom.name == 'body_literal':
             clause_id = atom.arguments[0].number
             predicate = atom.arguments[1].name

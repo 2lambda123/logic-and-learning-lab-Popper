@@ -577,10 +577,10 @@ appears_before(P,A):-
     head_literal(C,Q,_,_),
     body_literal(C,P,_,_).
 
-%% AN INVENTED SYMBOL MUST APPEAR IN THE BODY OF A CLAUSE
-:-
-    invented(P,A),
-    not appears_before(P,A).
+%%% AN INVENTED SYMBOL MUST APPEAR IN THE BODY OF A CLAUSE
+%:-
+%    invented(P,A),
+%    not appears_before(P,A).
 
 %% MUST INVENT IN ORDER
 :-

@@ -8,6 +8,7 @@ from . tester import Tester
 from . constrain import Constrain
 from . generate import generate_program
 from . core import Grounding, Clause
+from . rewrite import Rewriter
 
 class Outcome:
     ALL = 'all'
@@ -119,6 +120,7 @@ def calc_score(conf_matrix):
 
 def popper(settings, stats):
     solver = ClingoSolver(settings)
+    rewriter = Rewriter(solver.higher_order_preds)
     tester = Tester(settings)
     settings.num_pos, settings.num_neg = len(tester.pos), len(tester.neg)
     grounder = ClingoGrounder()
@@ -137,9 +139,12 @@ def popper(settings, stats):
                     break
                 (program, before, min_clause) = generate_program(model)
 
+            #print([Clause.to_code(cl) for cl in program])
+
             # TEST HYPOTHESIS
             with stats.duration('test'):
-                conf_matrix = tester.test(program)
+                test_program = rewriter.rewrite(program)
+                conf_matrix = tester.test(test_program)
                 outcome = decide_outcome(conf_matrix)
                 score = calc_score(conf_matrix)
 

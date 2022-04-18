@@ -147,6 +147,10 @@ class Clause:
         (head, body) = rule
         if head.predicate.startswith('inv'):
             return False
+        head, body = rule
+        if any('inv' in lit.predicate and '__' in lit.predicate
+               for lit in body): # FIXME: horrible heuristic for detecting problematic higher-order programs
+            return False
         return True
 
     @staticmethod
