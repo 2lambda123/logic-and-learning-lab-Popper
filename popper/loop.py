@@ -142,23 +142,23 @@ def popper(settings, stats):
             #print([Clause.to_code(cl) for cl in program])
 
             # TEST HYPOTHESIS
+            test_program = rewriter.rewrite(program)
             with stats.duration('test'):
-                test_program = rewriter.rewrite(program)
                 conf_matrix = tester.test(test_program)
                 outcome = decide_outcome(conf_matrix)
                 score = calc_score(conf_matrix)
 
-            stats.register_program(program, conf_matrix)
+            stats.register_program(test_program, conf_matrix)
 
             # UPDATE BEST PROGRAM
             if best_score == None or score > best_score:
                 best_score = score
 
                 if outcome == (Outcome.ALL, Outcome.NONE):
-                    stats.register_solution(program, conf_matrix)
+                    stats.register_solution(test_program, conf_matrix)
                     return stats.solution.code
 
-                stats.register_best_program(program, conf_matrix)
+                stats.register_best_program(test_program, conf_matrix)
 
             # BUILD RULES
             with stats.duration('build'):

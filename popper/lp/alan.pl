@@ -23,6 +23,7 @@
 #show min_clause/2.
 #show direction_/3.
 
+
 %% HEAD PRED SYMBOL IF GIVEN BY USER OR INVENTED
 head_aux(P,A):-
     head_pred(P,A).
@@ -739,3 +740,120 @@ only_once(P,A):-
 % NB: following assumes that the body literal can always be unified with the head literal - an assumption that holds for now...
 depends_on(C1,C2) :- head_literal(C2,Pred,Arity,_),body_literal(C1,Pred,Arity,_).
 depends_on(C1,C3) :- depends_on(C1,C2),depends_on(C2,C3).
+
+%% HELPERS FOR HIGHER-ORDER ARGUMENTS
+#script (python)
+from clingo.symbol import Tuple_, Number, Function, SymbolType, String
+
+def lgroundname(pred, types, preds):
+    print('lgroundname', pred, types, preds)
+    arg_to_name = {}
+    preds = iter(preds.arguments)
+    for idx, t in enumerate(types.arguments):
+        if t.arguments != []:
+            arg_to_name[idx] = next(preds).name
+    suffix = '__'.join(f"{idx}{name}" for (idx, name) in arg_to_name.items())
+    print('suffix', suffix)
+    return Function(name=pred.name + '__' + suffix)
+
+def lgroundtypes(types, fo_or_ho):
+    print('lgroundtypes', types, fo_or_ho, fo_or_ho.name == "fo")
+    fotypes = tuple(type for type in types.arguments if type.arguments == [])
+    hotypes = tuple(type for type in types.arguments if type.arguments != [])
+    if len(hotypes) == 0:
+        return []
+    return Tuple_(fotypes) if fo_or_ho.name == 'fo' else Tuple_(hotypes)
+def lgroundarity(types, fo_or_ho):
+    print('lgroundarity', types, fo_or_ho)
+    fotypes = tuple(type for type in types.arguments if type.arguments == [])
+    hotypes = tuple(type for type in types.arguments if type.arguments != [])
+    if len(hotypes) == 0:
+        return []
+    return Number(len(fotypes)) if fo_or_ho.name == 'fo' else Number(len(hotypes))
+lgrounddirs = lgroundtypes # this impl. is exactly the same (upto alpha-renaming)
+
+def numargs(tuple_):
+    print('numargs', tuple_, end=' ')
+    num = Number(len(tuple_.arguments))
+    print(num)
+    return num
+
+def index(elt, tuple):
+    for idx, arg in enumerate(tuple.arguments):
+        if arg == elt:
+            yield Number(idx)
+def atindex(tuple, idx):
+    print('atindex', tuple, idx)
+    return tuple.arguments[idx.number]
+
+def printer(arg):
+    print('printer', arg)
+    return arg
+#end.
+
+body_pred(Pred,@lgroundarity(Types,fo),@lgroundarity(Types,ho),ho) :-
+    body_pred(Pred,_Arity,ho),
+    type(Pred,Types).
+seen_arity(A):-
+    body_pred(_,A,_,ho),
+    enable_pi.
+
+%% DERIVE THE L-GROUNDINGS OF HIGHER-ORDER PREDICATES
+body_pred_lgrounding(Pred,(P,),@lgroundname(Pred,Types,(P,)),@lgroundtypes(Types,fo),@lgroundtypes(Types,ho)) :-
+    body_pred(Pred,FoArity,1,ho),
+    type(Pred,Types),
+    invented(P,A). % TODO: force arity to already match higher-order argument's arity
+body_pred_lgrounding(Pred,(P1,P2),@lgroundname(Pred,Types,(P1,P2)),@lgroundtypes(Types,fo),@lgroundtypes(Types,ho)) :-
+    body_pred(Pred,FoArity,2,ho),
+    type(Pred,Types),
+    invented(P1,A1),
+    invented(P2,A2).
+body_pred_lgrounding(Pred,(P1,P2,P3),@lgroundname(Pred,Types,(P1,P2,P3)),@lgroundtypes(Types,fo),@lgroundtypes(Types,ho)) :-
+    body_pred(Pred,FoArity,3,ho),
+    type(Pred,Types),
+    invented(P1,A1),
+    invented(P2,A2),
+    invented(P3,A3).
+
+%% PROJECT DOWN FULL INFO FROM L-GROUNDING TO FIRST-ORDER POPPER SETTINGS
+body_pred(LgroundPredName,@numargs(FoTypes)) :-
+    body_pred_lgrounding(_Pred,_Lgrounding,LgroundPredName,FoTypes,_HoTypes).
+type(LgroundPredName,FoTypes) :-
+    body_pred_lgrounding(_Pred,_Lgrounding,LgroundPredName,FoTypes,_HoTypes).
+direction(LgroundPredName,@lgrounddirs(Dirs,fo)) :-
+    body_pred_lgrounding(Pred,_LGrounding,LgroundPredName,_FoTypes,_HoTypes),
+    direction(Pred,Dirs).
+
+%% INFER TYPE AND DIRECTION FOR INVENTED PREDICATES WHICH OCCUR AS HIGHER-ORDER ARGUMENTS
+type(P,@atindex(HoTypes,LgroundIdx)) :-
+    body_pred_lgrounding(_HoPred,Lgrounding,LgroundPredName,_FoTypes,HoTypes),
+    invented(P,A),
+    LgroundIdx=@index(P,Lgrounding),
+    body_literal(C1,LgroundPredName,_,_),
+    head_literal(C2,P,_,_).
+:- type(P,T1),type(P,T2),T1 != T2.
+direction(P,@atindex(@lgrounddirs(HoDirs,ho),LgroundIdx)) :-
+    body_pred_lgrounding(HoPred,Lgrounding,LgroundPredName,_FoTypes,_HoTypes),
+    direction(HoPred,HoDirs),
+    invented(P,A),
+    LgroundIdx=@index(P,Lgrounding),
+    body_literal(C1,LgroundPredName,_,_),
+    head_literal(C2,P,_,_).
+:- direction(P,Dirs),invented(P,A),A != @pylen(Dirs).
+:- direction(P,D1),direction(P,D2),D1 != D2.
+
+%% EXTEND THE CLAUSE DEPENDENCY GRAPH TO ACCOUNT FOR HIGHER-ORDER ARGUMENTS
+depends_on(C1,C2) :-
+    invented(P,A),
+    body_pred_lgrounding(_HoPred,Lgrounding,LgroundPredName,_FoTypes,_HoTypes),
+    LgroundIdx=@index(P,Lgrounding),
+    body_literal(C1,LgroundPredName,_,_),
+    head_literal(C2,P,_,_).
+
+%% DISALLOW THE HEAD PREDICATE OF A CLAUSE TO BE A HIGHER-ORDER ARGUMENT OF THAT CLAUSE
+:-
+    body_pred_lgrounding(_HoPred,Lgrounding,LgroundPredName,_FoTypes,_HoTypes),
+    LgroundIdx=@index(P,Lgrounding),
+    body_literal(C1,LgroundPredName,_,_),
+    head_literal(C2,P,_,_),
+    depends_on(C2,C1).
