@@ -139,8 +139,6 @@ def popper(settings, stats):
                     break
                 (program, before, min_clause) = generate_program(model)
 
-            #print([Clause.to_code(cl) for cl in program])
-
             # TEST HYPOTHESIS
             test_program = rewriter.rewrite(program)
             with stats.duration('test'):

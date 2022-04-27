@@ -162,13 +162,10 @@ class ClingoSolver():
         ho_body_preds = self.solver.symbolic_atoms.by_signature('body_pred', arity=3)
         self.higher_order_preds = set()
         for atom in ho_body_preds:
-            print(atom.symbol.arguments[2].name == 'ho')
-            if not atom.symbol.arguments[2].name == 'ho':
-                print('lolwut?')
-            else:
-                pred_name = atom.symbol.arguments[0].name
-                pred_arity = atom.symbol.arguments[1].number 
-                self.higher_order_preds.add((pred_name, pred_arity))
+            assert atom.symbol.arguments[2].name == 'ho'
+            pred_name = atom.symbol.arguments[0].name
+            pred_arity = atom.symbol.arguments[1].number 
+            self.higher_order_preds.add((pred_name, pred_arity))
 
     def get_model(self):
         with self.solver.solve(yield_ = True) as handle:
