@@ -746,49 +746,38 @@ depends_on(C1,C3) :- depends_on(C1,C2),depends_on(C2,C3).
 from clingo.symbol import Tuple_, Number, Function, SymbolType, String
 
 def lgroundname(pred, types, preds):
-    print('lgroundname', pred, types, preds)
     arg_to_name = {}
     preds = iter(preds.arguments)
     for idx, t in enumerate(types.arguments):
         if t.arguments != []:
             arg_to_name[idx] = next(preds).name
     suffix = '__'.join(f"{idx}{name}" for (idx, name) in arg_to_name.items())
-    print('suffix', suffix)
     return Function(name=pred.name + '__' + suffix)
 
 def lgroundtypes(types, fo_or_ho):
-    print('lgroundtypes', types, fo_or_ho, fo_or_ho.name == "fo")
     fotypes = tuple(type for type in types.arguments if type.arguments == [])
     hotypes = tuple(type for type in types.arguments if type.arguments != [])
     if len(hotypes) == 0:
         return []
     return Tuple_(fotypes) if fo_or_ho.name == 'fo' else Tuple_(hotypes)
+lgrounddirs = lgroundtypes # this impl. is exactly the same (upto alpha-renaming)
 def lgroundarity(types, fo_or_ho):
-    print('lgroundarity', types, fo_or_ho)
     fotypes = tuple(type for type in types.arguments if type.arguments == [])
     hotypes = tuple(type for type in types.arguments if type.arguments != [])
     if len(hotypes) == 0:
         return []
     return Number(len(fotypes)) if fo_or_ho.name == 'fo' else Number(len(hotypes))
-lgrounddirs = lgroundtypes # this impl. is exactly the same (upto alpha-renaming)
 
 def numargs(tuple_):
-    print('numargs', tuple_, end=' ')
-    num = Number(len(tuple_.arguments))
-    print(num)
-    return num
+    return Number(len(tuple_.arguments))
 
 def index(elt, tuple):
     for idx, arg in enumerate(tuple.arguments):
         if arg == elt:
             yield Number(idx)
-def atindex(tuple, idx):
-    print('atindex', tuple, idx)
-    return tuple.arguments[idx.number]
 
-def printer(arg):
-    print('printer', arg)
-    return arg
+def atindex(tuple, idx):
+    return tuple.arguments[idx.number]
 #end.
 
 body_pred(Pred,@lgroundarity(Types,fo),@lgroundarity(Types,ho),ho) :-
