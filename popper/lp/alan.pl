@@ -579,9 +579,9 @@ appears_before(P,A):-
     body_literal(C,P,_,_).
 
 %%% AN INVENTED SYMBOL MUST APPEAR IN THE BODY OF A CLAUSE
-%:-
-%    invented(P,A),
-%    not appears_before(P,A).
+:-
+    invented(P,A),
+    not appears_before(P,A).
 
 %% MUST INVENT IN ORDER
 :-
@@ -846,3 +846,12 @@ depends_on(C1,C2) :-
     body_literal(C1,LgroundPredName,_,_),
     head_literal(C2,P,_,_),
     depends_on(C2,C1).
+
+%% EXTEND THE CHECK ON ORDERING OF PREDICATES IN CLAUSES TO ACCOUNT FOR HIGHER-ORDER ARGUMENTS
+appears_before(P,A):-
+    invented(P,A),
+    lower(Q,P),
+    head_literal(C,Q,_,_),
+    body_literal(C,LgroundPredName,_,_),
+    body_pred_lgrounding(_HoPred,Lgrounding,LgroundPredName,_FoTypes,_HoTypes),
+    Dummy=@index(P,Lgrounding).
