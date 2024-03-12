@@ -57,7 +57,7 @@ class Combiner:
                 # if a rule is used only within to-delete-programs, can simply delete it from the combine stage and from saved_progs
                 to_delete = set()
                 for rule in to_delete_rules:
-                    if all([prog in to_delete_progs for prog in self.rule_to_prog[rule]]):
+                    if all(prog in to_delete_progs for prog in self.rule_to_prog[rule]):
                         to_delete.add(rule)
 
                 # now delete it from big encoding

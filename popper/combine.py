@@ -125,7 +125,7 @@ class Combiner:
 
                     fn = len(self.settings.pos_index) - len(pos_covered)
                     fp = len(neg_covered)
-                    size = sum([self.ruleid_to_size[r] for r in rules])
+                    size = sum(self.ruleid_to_size[r] for r in rules)
 
                     # print(f'COST fn:{fn} fp:{fp} size:{size}')
 

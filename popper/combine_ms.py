@@ -300,11 +300,11 @@ class Combiner:
                 print("WARNING: No solution found, exit combiner.")
                 break
 
-            fn = sum([1 for i in self.settings.pos_index if model[self.example_covered_var[i]-1] < 0])
+            fn = sum(1 for i in self.settings.pos_index if model[self.example_covered_var[i]-1] < 0)
             fp = 0
             if not self.settings.nonoise:
-                fp = sum([1 for i in self.settings.neg_index if model[self.example_covered_var[i]-1] > 0])
-            size = sum([self.ruleid_to_size[rule_id] for rule_id in self.ruleid_to_size if model[self.rule_var[rule_id]-1] > 0])
+                fp = sum(1 for i in self.settings.neg_index if model[self.example_covered_var[i]-1] > 0)
+            size = sum(self.ruleid_to_size[rule_id] for rule_id in self.ruleid_to_size if model[self.rule_var[rule_id]-1] > 0)
 
             if self.settings.lex:
                 if self.settings.best_prog_score:
