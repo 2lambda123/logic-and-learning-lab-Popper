@@ -950,7 +950,8 @@ class Popper():
                 seen_hyp_gen[k].remove(to_del)
         return cons
 
-    def subsumed_or_covers_too_few(self, prog, seen=set()):
+    def subsumed_or_covers_too_few(self, prog, seen=None):
+        seen = set() if seen is None else seen
         tester, success_sets, settings = self.tester, self.success_sets, self.settings
         head, body = list(prog)[0]
         body = list(body)
@@ -1395,7 +1396,9 @@ class Popper():
     #             out.append((subprog, headless))
     #     return out
 
-    def explain_totally_incomplete_aux2(self, prog, unsat2=set(), unsat=set()):
+    def explain_totally_incomplete_aux2(self, prog, unsat2=None, unsat=None):
+        unsat2 = set() if unsat2 is None else unsat2
+        unsat = set() if unsat is None else unsat
         has_recursion = prog_is_recursive(prog)
 
         out = []
