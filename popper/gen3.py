@@ -32,7 +32,8 @@ def atom_to_symbol(pred, args):
 
 class Generator:
 
-    def __init__(self, settings, bkcons=[]):
+    def __init__(self, settings, bkcons=None):
+        bkcons = [] if bkcons is None else bkcons
         self.settings = settings
         self.seen_handles = set()
         self.assigned = {}

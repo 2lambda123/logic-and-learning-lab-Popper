@@ -31,7 +31,8 @@ program_size_at_least(M):- size(N), program_bounds(M), M <= N.
 
 class Generator:
 
-    def __init__(self, settings, bkcons=[]):
+    def __init__(self, settings, bkcons=None):
+        bkcons = [] if bkcons is None else bkcons
         self.savings = 0
         self.settings = settings
         self.assigned = {}
